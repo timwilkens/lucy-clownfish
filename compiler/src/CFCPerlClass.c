@@ -90,7 +90,6 @@ CFCPerlClass_init(CFCPerlClass *self, CFCParcel *parcel,
 void
 CFCPerlClass_destroy(CFCPerlClass *self) {
     CFCBase_decref((CFCBase*)self->parcel);
-    CFCBase_decref((CFCBase*)self->client);
     CFCBase_decref((CFCBase*)self->pod_spec);
     FREEMEM(self->class_name);
     FREEMEM(self->xs_code);
