@@ -25,12 +25,26 @@ sub bind_perlclass {
     class_from_c('CFCPerlClass', 'Clownfish::CFC::Binding::Perl::Class');
 
     my @exposed = qw(
+        Add_To_Registry
         Bind_Constructor
         Bind_Method
         Exclude_Constructor
         Exclude_Method
+        Method_Bindings
+        Constructor_Bindings
+        Create_Pod
+        Get_Client
+        Get_Class_Name
+        Append_Xs
+        Get_Xs_Code
         Set_Pod_Spec
+        Get_Pod_Spec
     );
+    # TODO: Generate docs for functions
+    #my @exposed_functions = qw(
+    #    singleton
+    #    clear_registry
+    #);
 
     my $pod_spec = Clownfish::CFC::Binding::Perl::Pod->new;
     $pod_spec->add_constructor( alias => 'new' );
