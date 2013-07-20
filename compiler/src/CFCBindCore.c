@@ -60,6 +60,9 @@ S_charmony_stdbool_defines();
 char*
 S_charmony_stdint_defines();
 
+static void
+S_do_make_path(const char *path);
+
 static const CFCMeta CFCBINDCORE_META = {
     "Clownfish::CFC::Binding::Core",
     sizeof(CFCBindCore),
@@ -98,13 +101,17 @@ CFCBindCore_write_all_modified(CFCBindCore *self, int modified) {
     CFCHierarchy *hierarchy = self->hierarchy;
     const char   *header    = self->header;
     const char   *footer    = self->footer;
+    const char   *inc_dest  = CFCHierarchy_get_include_dest(hierarchy);
+    const char   *src_dest  = CFCHierarchy_get_source_dest(hierarchy);
+
+    S_do_make_path(inc_dest);
+    S_do_make_path(src_dest);
 
     // Discover whether files need to be regenerated.
     modified = CFCHierarchy_propagate_modified(hierarchy, modified);
 
     // Iterate over all File objects, writing out those which don't have
     // up-to-date auto-generated files.
-    const char *inc_dest = CFCHierarchy_get_include_dest(hierarchy);
     CFCFile **files = CFCHierarchy_files(hierarchy);
     for (int i = 0; files[i] != NULL; i++) {
         if (CFCFile_get_modified(files[i])) {
@@ -614,6 +621,16 @@ S_charmony_stdint_defines() {
                            XSTRING(CHY_INT32_T), XSTRING(CHY_UINT32_T),
                            XSTRING(CHY_INT64_T), XSTRING(CHY_UINT64_T));
 #endif
+}
+
+static void
+S_do_make_path(const char *path) {
+    if (!CFCUtil_is_dir(path)) {
+        CFCUtil_make_path(path);
+        if (!CFCUtil_is_dir(path)) {
+            CFCUtil_die("Can't make path %s", path);
+        }
+    }
 }
 
 
