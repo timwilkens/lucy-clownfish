@@ -1029,7 +1029,7 @@ PPCODE:
 MODULE = Clownfish::CFC   PACKAGE = Clownfish::CFC::Model::ParamList
 
 SV*
-_new(klass, variadic)
+_new(variadic)
     int variadic;
 CODE:
     CFCParamList *self = CFCParamList_new(variadic);
