@@ -149,6 +149,8 @@ sub ACTION_code {
 sub ACTION_pod {
     my $self = shift;
 
+    $self->dispatch('code');
+
     local @INC = ( @INC, qw( blib/lib blib/arch ) );
     require Clownfish::CFC;
 
