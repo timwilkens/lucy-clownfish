@@ -26,6 +26,7 @@ package Clownfish::Build;
 # afterwards.
 use lib '../../compiler/perl/lib';
 use base qw( Clownfish::CFC::Perl::Build );
+use base qw( Clownfish::CFC::Perl::Build::Charmonic );
 no lib '../../compiler/perl/lib';
 
 our $VERSION = '0.003000';
@@ -130,6 +131,25 @@ sub ACTION_clownfish {
     $self->depends_on(qw( charmonizer_tests cfc ));
 
     $self->SUPER::ACTION_clownfish;
+}
+
+sub ACTION_compile_custom_xs {
+    my $self = shift;
+
+    # Add extra compiler flags from Charmonizer.
+    my $cf_cflags    = $self->clownfish_params('cflags');
+    my $charm_cflags = $self->charmony('EXTRA_CFLAGS');
+    if ($charm_cflags) {
+        if ($cf_cflags) {
+            $cf_cflags .= " $charm_cflags";
+        }
+        else {
+            $cf_cflags = $charm_cflags;
+        }
+    }
+    $self->clownfish_params( cflags => $cf_cflags );
+
+    $self->SUPER::ACTION_compile_custom_xs;
 }
 
 sub ACTION_suppressions {
