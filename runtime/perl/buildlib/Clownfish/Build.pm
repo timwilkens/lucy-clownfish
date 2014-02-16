@@ -86,7 +86,7 @@ sub _run_make {
 # Build the charmonizer tests.
 sub ACTION_charmonizer_tests {
     my $self = shift;
-    $self->dispatch('charmony');
+    $self->depends_on('charmony');
     print "Building Charmonizer Tests...\n\n";
     my $flags = join( " ",
         $self->config('ccflags'),
@@ -116,7 +116,7 @@ sub ACTION_cfc {
 sub ACTION_copy_clownfish_includes {
     my $self = shift;
 
-    $self->dispatch('charmony');
+    $self->depends_on('charmony');
 
     $self->SUPER::ACTION_copy_clownfish_includes;
 
@@ -127,8 +127,7 @@ sub ACTION_copy_clownfish_includes {
 sub ACTION_clownfish {
     my $self = shift;
 
-    $self->dispatch('charmonizer_tests');
-    $self->dispatch('cfc');
+    $self->depends_on(qw( charmonizer_tests cfc ));
 
     $self->SUPER::ACTION_clownfish;
 }
@@ -195,8 +194,7 @@ sub ACTION_test_valgrind {
     if ( !$ENV{LUCY_VALGRIND} ) {
         warn "\$ENV{LUCY_VALGRIND} not true -- possible false positives";
     }
-    $self->dispatch('code');
-    $self->dispatch('suppressions');
+    $self->depends_on(qw( code suppressions ));
 
     # Unbuffer STDOUT, grab test file names and suppressions files.
     $|++;

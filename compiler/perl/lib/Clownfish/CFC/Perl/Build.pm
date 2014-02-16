@@ -243,7 +243,7 @@ sub _compile_clownfish {
 
 sub ACTION_pod {
     my $self = shift;
-    $self->dispatch("clownfish");
+    $self->depends_on('clownfish');
     $self->_write_pod(@_);
 }
 
@@ -348,7 +348,7 @@ sub ACTION_ppport {
 sub ACTION_compile_custom_xs {
     my $self = shift;
 
-    $self->dispatch('ppport');
+    $self->depends_on('ppport');
 
     require ExtUtils::CBuilder;
     require ExtUtils::ParseXS;
@@ -479,9 +479,11 @@ sub ACTION_compile_custom_xs {
 sub ACTION_code {
     my $self = shift;
 
-    $self->dispatch('clownfish');
-    $self->dispatch('compile_custom_xs');
-    $self->dispatch('copy_clownfish_includes');
+    $self->depends_on(qw(
+        clownfish
+        compile_custom_xs
+        copy_clownfish_includes
+    ));
 
     $self->SUPER::ACTION_code;
 }
