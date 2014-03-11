@@ -29,6 +29,11 @@
 #include "CFCVersion.h"
 #include "CFCUtil.h"
 
+struct CFCPrereq {
+    char *name;
+    CFCVersion *version;
+};
+
 struct CFCParcel {
     CFCBase base;
     char *name;
@@ -43,6 +48,8 @@ struct CFCParcel {
     size_t num_dependent_parcels;
     char **inherited_parcels;
     size_t num_inherited_parcels;
+    CFCPrereq **prereqs;
+    size_t num_prereqs;
 };
 
 static CFCParcel *default_parcel = NULL;
@@ -57,6 +64,9 @@ typedef struct JSONNode {
     struct JSONNode **kids;
     size_t num_kids;
 } JSONNode;
+
+static void
+S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path);
 
 static JSONNode*
 S_parse_json_for_parcel(const char *json);
@@ -251,6 +261,10 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
     self->num_inherited_parcels = 0;
 
+    // Initialize prereqs.
+    self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
+    self->num_prereqs = 0;
+
     return self;
 }
 
@@ -266,6 +280,7 @@ S_new_from_json(const char *json, const char *path, int is_included) {
     const char *name     = NULL;
     const char *nickname = NULL;
     CFCVersion *version  = NULL;
+    JSONNode   *prereqs  = NULL;
     for (size_t i = 0, max = parsed->num_kids; i < max; i += 2) {
         JSONNode *key   = parsed->kids[i];
         JSONNode *value = parsed->kids[i + 1];
@@ -292,6 +307,12 @@ S_new_from_json(const char *json, const char *path, int is_included) {
             }
             version = CFCVersion_new(value->string);
         }
+        else if (strcmp(key->string, "prereqs") == 0) {
+            if (value->type != JSON_HASH) {
+                CFCUtil_die("'prereqs' must be a hash (filepath %s)", path);
+            }
+            prereqs = value;
+        }
         else {
             CFCUtil_die("Unrecognized key: '%s' (filepath '%s')",
                         key->string, path);
@@ -304,10 +325,49 @@ S_new_from_json(const char *json, const char *path, int is_included) {
         CFCUtil_die("Missing required key 'version' (filepath '%s')", path);
     }
     CFCParcel *self = CFCParcel_new(name, nickname, version, is_included);
+    if (prereqs) {
+        S_set_prereqs(self, prereqs, path);
+    }
     CFCBase_decref((CFCBase*)version);
 
     S_destroy_json(parsed);
     return self;
+}
+
+static void
+S_set_prereqs(CFCParcel *self, JSONNode *node, const char *path) {
+    size_t num_prereqs = node->num_kids / 2;
+    CFCPrereq **prereqs
+        = (CFCPrereq**)MALLOCATE((num_prereqs + 1) * sizeof(CFCPrereq*));
+
+    for (size_t i = 0; i < num_prereqs; ++i) {
+        CFCPrereq *prereq = (CFCPrereq*)MALLOCATE(sizeof(CFCPrereq));
+
+        JSONNode *key = node->kids[2*i];
+        if (key->type != JSON_STRING) {
+            CFCUtil_die("Prereq key must be a string (filepath '%s')", path);
+        }
+        prereq->name = CFCUtil_strdup(key->string);
+
+        JSONNode *value = node->kids[2*i+1];
+        if (value->type == JSON_STRING) {
+            prereq->version = CFCVersion_new(value->string);
+        }
+        else if (value->type == JSON_NULL) {
+            prereq->version = CFCVersion_new("v0");
+        }
+        else {
+            CFCUtil_die("Invalid prereq value (filepath '%s')", path);
+        }
+
+        prereqs[i] = prereq;
+    }
+    prereqs[num_prereqs] = NULL;
+
+    // Assume that prereqs are empty.
+    FREEMEM(self->prereqs);
+    self->prereqs     = prereqs;
+    self->num_prereqs = num_prereqs;
 }
 
 CFCParcel*
@@ -341,6 +401,13 @@ CFCParcel_destroy(CFCParcel *self) {
         FREEMEM(self->inherited_parcels[i]);
     }
     FREEMEM(self->inherited_parcels);
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        CFCPrereq *prereq = self->prereqs[i];
+        FREEMEM(prereq->name);
+        CFCBase_decref((CFCBase*)prereq->version);
+        FREEMEM(prereq);
+    }
+    FREEMEM(self->prereqs);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -472,6 +539,21 @@ CFCParcel_inherited_parcels(CFCParcel *self) {
     }
 
     return parcels;
+}
+
+CFCPrereq**
+CFCParcel_get_prereqs(CFCParcel *self) {
+    return self->prereqs;
+}
+
+const char*
+CFCPrereq_get_name(CFCPrereq *self) {
+    return self->name;
+}
+
+CFCVersion*
+CFCPrereq_get_version(CFCPrereq *self) {
+    return self->version;
 }
 
 /*****************************************************************************

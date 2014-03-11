@@ -33,7 +33,7 @@ S_run_tests(CFCTest *test);
 
 const CFCTestBatch CFCTEST_BATCH_PARCEL = {
     "Clownfish::CFC::Model::Parcel",
-    12,
+    20,
     S_run_tests
 };
 
@@ -98,6 +98,46 @@ S_run_tests(CFCTest *test) {
                "get_PREFIX with parcel");
 
         CFCBase_decref((CFCBase*)thing);
+        CFCBase_decref((CFCBase*)parcel);
+    }
+
+    {
+        const char *json =
+            "        {\n"
+            "            \"name\": \"Crustacean\",\n"
+            "            \"version\": \"v0.1.0\",\n"
+            "            \"prereqs\": {\n"
+            "                \"Clownfish\": null,\n"
+            "                \"Arthropod\": \"v30.104.5\"\n"
+            "            }\n"
+            "        }\n";
+        CFCParcel *parcel = CFCParcel_new_from_json(json, false);
+
+        CFCPrereq **prereqs = CFCParcel_get_prereqs(parcel);
+        OK(test, prereqs != NULL, "prereqs");
+
+        CFCPrereq *cfish = prereqs[0];
+        OK(test, cfish != NULL, "prereqs[0]");
+        const char *cfish_name = CFCPrereq_get_name(cfish);
+        STR_EQ(test, cfish_name, "Clownfish", "prereqs[0] name");
+        CFCVersion *v0            = CFCVersion_new("v0");
+        CFCVersion *cfish_version = CFCPrereq_get_version(cfish);
+        INT_EQ(test, CFCVersion_compare_to(cfish_version, v0), 0,
+               "prereqs[0] version");
+
+        CFCPrereq *apod = prereqs[1];
+        OK(test, apod != NULL, "prereqs[1]");
+        const char *apod_name = CFCPrereq_get_name(apod);
+        STR_EQ(test, apod_name, "Arthropod", "prereqs[1] name");
+        CFCVersion *v30_104_5    = CFCVersion_new("v30.104.5");
+        CFCVersion *apod_version = CFCPrereq_get_version(apod);
+        INT_EQ(test, CFCVersion_compare_to(apod_version, v30_104_5), 0,
+               "prereqs[1] version");
+
+        OK(test, prereqs[2] == NULL, "prereqs[2]");
+
+        CFCBase_decref((CFCBase*)v30_104_5);
+        CFCBase_decref((CFCBase*)v0);
         CFCBase_decref((CFCBase*)parcel);
     }
 
