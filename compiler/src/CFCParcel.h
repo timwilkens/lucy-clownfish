@@ -161,6 +161,9 @@ CFCParcel_check_prereqs(CFCParcel *self);
 int
 CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel);
 
+void
+CFCParcel_add_class_struct_sym(CFCParcel *self, const char *struct_sym);
+
 const char*
 CFCPrereq_get_name(CFCPrereq *self);
 

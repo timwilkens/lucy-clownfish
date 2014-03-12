@@ -47,6 +47,8 @@ struct CFCParcel {
     int is_required;
     char **inherited_parcels;
     size_t num_inherited_parcels;
+    char **class_struct_syms;
+    size_t num_class_struct_syms;
     CFCPrereq **prereqs;
     size_t num_prereqs;
 };
@@ -258,6 +260,8 @@ CFCParcel_init(CFCParcel *self, const char *name, const char *cnick,
     // Initialize arrays.
     self->inherited_parcels = (char**)CALLOCATE(1, sizeof(char*));
     self->num_inherited_parcels = 0;
+    self->class_struct_syms = (char**)CALLOCATE(1, sizeof(char*));
+    self->num_class_struct_syms = 0;
     self->prereqs = (CFCPrereq**)CALLOCATE(1, sizeof(CFCPrereq*));
     self->num_prereqs = 0;
 
@@ -400,6 +404,10 @@ CFCParcel_destroy(CFCParcel *self) {
         FREEMEM(prereq);
     }
     FREEMEM(self->prereqs);
+    for (size_t i = 0; self->class_struct_syms[i]; ++i) {
+        FREEMEM(self->class_struct_syms[i]);
+    }
+    FREEMEM(self->class_struct_syms);
     CFCBase_destroy((CFCBase*)self);
 }
 
@@ -569,6 +577,18 @@ CFCParcel_has_prereq(CFCParcel *self, CFCParcel *parcel) {
     }
 
     return false;
+}
+
+void
+CFCParcel_add_class_struct_sym(CFCParcel *self, const char *struct_sym) {
+    size_t num_class_struct_syms = self->num_class_struct_syms + 1;
+    size_t size = (num_class_struct_syms + 1) * sizeof(char*);
+    char **class_struct_syms
+        = (char**)REALLOCATE(self->class_struct_syms, size);
+    class_struct_syms[num_class_struct_syms-1] = CFCUtil_strdup(struct_sym);
+    class_struct_syms[num_class_struct_syms]   = NULL;
+    self->class_struct_syms     = class_struct_syms;
+    self->num_class_struct_syms = num_class_struct_syms;
 }
 
 const char*
