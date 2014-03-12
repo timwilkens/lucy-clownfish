@@ -591,6 +591,38 @@ CFCParcel_add_class_struct_sym(CFCParcel *self, const char *struct_sym) {
     self->num_class_struct_syms = num_class_struct_syms;
 }
 
+static CFCParcel*
+S_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
+    for (size_t i = 0; self->class_struct_syms[i]; ++i) {
+        if (strcmp(self->class_struct_syms[i], struct_sym) == 0) {
+            return self;
+        }
+    }
+
+    return NULL;
+}
+
+CFCParcel*
+CFCParcel_lookup_struct_sym(CFCParcel *self, const char *struct_sym) {
+    CFCParcel *parcel = S_lookup_struct_sym(self, struct_sym);
+
+    for (size_t i = 0; self->prereqs[i]; ++i) {
+        const char *prereq_name   = CFCPrereq_get_name(self->prereqs[i]);
+        CFCParcel  *prereq_parcel = CFCParcel_fetch(prereq_name);
+        CFCParcel *maybe_parcel
+            = S_lookup_struct_sym(prereq_parcel, struct_sym);
+
+        if (maybe_parcel) {
+            if (parcel) {
+                CFCUtil_die("Type '%s' is ambigious", struct_sym);
+            }
+            parcel = maybe_parcel;
+        }
+    }
+
+    return parcel;
+}
+
 const char*
 CFCPrereq_get_name(CFCPrereq *self) {
     return self->name;
