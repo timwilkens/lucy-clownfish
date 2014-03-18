@@ -190,6 +190,12 @@ CFCMethod_compatible(CFCMethod *self, CFCMethod *other) {
             if (!CFCType_equals(my_type, other_type)) {
                 return false;
             }
+
+            const char *my_sym    = CFCVariable_micro_sym(my_args[i]);
+            const char *other_sym = CFCVariable_micro_sym(other_args[i]);
+            if (strcmp(my_sym, other_sym) != 0) {
+                return false;
+            }
         }
         else {
             break;
