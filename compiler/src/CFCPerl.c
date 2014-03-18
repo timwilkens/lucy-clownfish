@@ -404,7 +404,6 @@ CFCPerl_write_bindings(CFCPerl *self) {
     // Pound-includes for generated headers.
     for (size_t i = 0; ordered[i] != NULL; i++) {
         CFCClass *klass = ordered[i];
-        // It might be possible to skip indirect dependencies here.
         const char *include_h = CFCClass_include_h(klass);
         generated_xs = CFCUtil_cat(generated_xs, "#include \"", include_h,
                                    "\"\n", NULL);
