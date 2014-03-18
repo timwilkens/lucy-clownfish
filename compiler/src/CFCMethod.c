@@ -185,7 +185,9 @@ CFCMethod_compatible(CFCMethod *self, CFCMethod *other) {
             if (strcmp(my_vals[i], other_vals[i])) { return false; }
         }
         if (my_args[i]) {
-            if (!CFCVariable_equals(my_args[i], other_args[i])) {
+            CFCType *my_type    = CFCVariable_get_type(my_args[i]);
+            CFCType *other_type = CFCVariable_get_type(other_args[i]);
+            if (!CFCType_equals(my_type, other_type)) {
                 return false;
             }
         }
