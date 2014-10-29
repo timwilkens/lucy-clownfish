@@ -354,6 +354,8 @@ sub ACTION_clownfish {
     {
         utime( time, time, $AUTOGEN_DIR );    # touch
     }
+
+    $hierarchy->write_log;
 }
 
 # Write ppport.h, which supplies some XS routines not found in older Perls and

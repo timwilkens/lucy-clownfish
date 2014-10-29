@@ -760,6 +760,12 @@ CODE:
 OUTPUT: RETVAL
 
 void
+write_log(self)
+    CFCHierarchy *self;
+PPCODE:
+    CFCHierarchy_write_log(self);
+
+void
 _set_or_get(self, ...)
     CFCHierarchy *self;
 ALIAS:
