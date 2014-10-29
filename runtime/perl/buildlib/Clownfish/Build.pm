@@ -144,27 +144,6 @@ sub ACTION_clownfish {
     $self->SUPER::ACTION_clownfish;
 }
 
-sub ACTION_compile_custom_xs {
-    my $self = shift;
-
-    $self->depends_on('charmony');
-
-    # Add extra compiler flags from Charmonizer.
-    my $charm_cflags = $self->charmony('EXTRA_CFLAGS');
-    if ($charm_cflags) {
-        my $cf_cflags = $self->clownfish_params('cflags');
-        if ($cf_cflags) {
-            $cf_cflags .= " $charm_cflags";
-        }
-        else {
-            $cf_cflags = $charm_cflags;
-        }
-        $self->clownfish_params( cflags => $cf_cflags );
-    }
-
-    $self->SUPER::ACTION_compile_custom_xs;
-}
-
 sub _valgrind_base_command {
     return
           "PERL_DESTRUCT_LEVEL=2 LUCY_VALGRIND=1 valgrind "

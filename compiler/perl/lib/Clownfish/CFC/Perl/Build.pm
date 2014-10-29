@@ -408,6 +408,17 @@ sub ACTION_compile_custom_xs {
             push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
         }
         my $extra_cflags = $self->clownfish_params('cflags');
+        if ($is_charmonic) {
+            my $charm_cflags = $self->charmony('EXTRA_CFLAGS');
+            if ($charm_cflags) {
+                if ($extra_cflags) {
+                    $extra_cflags .= " $charm_cflags";
+                }
+                else {
+                    $extra_cflags = $charm_cflags;
+                }
+            }
+        }
         for my $c_file (@$c_files) {
             my $o_file   = $c_file;
             my $ccs_file = $c_file;
