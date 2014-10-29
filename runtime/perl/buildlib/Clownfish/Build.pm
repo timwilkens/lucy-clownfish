@@ -90,6 +90,7 @@ sub new {
         $self->config( optimize => $optimize );
     }
 
+    $self->charmonizer_params( create_makefile => 1 );
     $self->charmonizer_params( charmonizer_c => $CHARMONIZER_C );
 
     return $self;

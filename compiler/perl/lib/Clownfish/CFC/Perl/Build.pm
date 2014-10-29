@@ -379,6 +379,10 @@ sub ACTION_compile_custom_xs {
 
     $self->depends_on('ppport');
 
+    my $is_charmonic = $self->isa('Clownfish::CFC::Perl::Build::Charmonic');
+    $self->depends_on('charmony')
+        if $is_charmonic;
+
     require ExtUtils::CBuilder;
     require ExtUtils::ParseXS;
 
@@ -394,27 +398,41 @@ sub ACTION_compile_custom_xs {
     my @objects;
 
     # Compile C source files.
-    my $c_files = [];
-    my $source_dirs = $self->clownfish_params('source');
-    for my $source_dir (@$source_dirs) {
-        push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
-    }
-    my $extra_cflags = $self->clownfish_params('cflags');
-    for my $c_file (@$c_files) {
-        my $o_file   = $c_file;
-        my $ccs_file = $c_file;
-        $o_file   =~ s/\.c$/$Config{_o}/ or die "no match";
-        $ccs_file =~ s/\.c$/.ccs/        or die "no match";
-        push @objects, $o_file;
-        next if $self->up_to_date( $c_file, $o_file );
-        $self->add_to_cleanup($o_file);
-        $self->add_to_cleanup($ccs_file);
-        $cbuilder->compile(
-            source               => $c_file,
-            extra_compiler_flags => $extra_cflags,
-            include_dirs         => [ $self->cf_c_include_dirs ],
-            object_file          => $o_file,
+    if ($is_charmonic && $self->charmonizer_params('create_makefile')) {
+        my $make_options = $self->clownfish_params('make_options');
+        my $static_lib_file = $self->charmony('STATIC_LIB_FILENAME');
+        push @objects, $static_lib_file;
+        my @command = (
+            $self->config('make'),
+            $self->split_like_shell($make_options),
+            $static_lib_file,
         );
+        print join(' ', @command), "\n";
+        system @command and die($self->config('make') . " failed");
+    }
+    else {
+        my $c_files = [];
+        my $source_dirs = $self->clownfish_params('source');
+        for my $source_dir (@$source_dirs) {
+            push @$c_files, @{ $self->rscan_dir( $source_dir, qr/\.c$/ ) };
+        }
+        my $extra_cflags = $self->clownfish_params('cflags');
+        for my $c_file (@$c_files) {
+            my $o_file   = $c_file;
+            my $ccs_file = $c_file;
+            $o_file   =~ s/\.c$/$Config{_o}/ or die "no match";
+            $ccs_file =~ s/\.c$/.ccs/        or die "no match";
+            push @objects, $o_file;
+            next if $self->up_to_date( $c_file, $o_file );
+            $self->add_to_cleanup($o_file);
+            $self->add_to_cleanup($ccs_file);
+            $cbuilder->compile(
+                source               => $c_file,
+                extra_compiler_flags => $extra_cflags,
+                include_dirs         => [ $self->cf_c_include_dirs ],
+                object_file          => $o_file,
+            );
+        }
     }
 
     # .xs => .c
@@ -508,6 +526,18 @@ sub ACTION_code {
     ));
 
     $self->SUPER::ACTION_code;
+}
+
+sub ACTION_clean {
+    my $self = shift;
+
+    my $is_charmonic = $self->isa('Clownfish::CFC::Perl::Build::Charmonic');
+    if ($is_charmonic && $self->charmonizer_params('create_makefile')) {
+        system $self->config('make'), 'distclean'
+            if -e 'Makefile';
+    }
+
+    $self->SUPER::ACTION_clean;
 }
 
 # Monkey patch ExtUtils::CBuilder::Platform::Windows::GCC::format_linker_cmd
