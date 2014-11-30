@@ -7777,11 +7777,16 @@ int main(int argc, const char **argv) {
     /* Initialize. */
     chaz_CLI *cli
         = chaz_CLI_new(argv[0], "charmonizer: Probe C build environment");
+    chaz_CLI_register(cli, "host", "specify host binding language",
+                      CHAZ_CLI_ARG_REQUIRED);
     chaz_CLI_register(cli, "disable-threads", "whether to disable threads",
                       CHAZ_CLI_NO_ARG);
     chaz_CLI_set_usage(cli, "Usage: charmonizer [OPTIONS] [-- [CFLAGS]]");
     if (!chaz_Probe_parse_cli_args(argc, argv, cli)) {
         chaz_Probe_die_usage();
+    }
+    if (!chaz_CLI_defined(cli, "host")) {
+        chaz_CLI_set(cli, "host", "c");
     }
     chaz_Probe_init(cli);
     S_add_compiler_flags(cli);
@@ -7915,7 +7920,16 @@ cfish_MakeFile_new(chaz_CLI *cli) {
     self->autogen_target
         = chaz_Util_join(dir_sep, "autogen", "hierarchy.json", NULL);
 
-    if (chaz_CLI_defined(cli, "enable-perl")) {
+    if (strcmp(chaz_CLI_strval(cli, "host"), "go") == 0) {
+        static const char *go_autogen_src_files[] = {
+            "cfish_parcel",
+            "testcfish_parcel",
+            NULL
+        };
+        self->host_src_dir = "ext";
+        self->autogen_src_files = go_autogen_src_files;
+    }
+    else if (chaz_CLI_defined(cli, "enable-perl")) {
         static const char *perl_autogen_src_files[] = {
             "boot",
             "callbacks",
@@ -7938,7 +7952,7 @@ cfish_MakeFile_new(chaz_CLI *cli) {
 
     self->shared_lib = chaz_Lib_new("cfish", chaz_Lib_SHARED, cfish_version,
                                     cfish_major_version);
-    self->static_lib = chaz_Lib_new("cfish", chaz_Lib_STATIC, cfish_version,
+    self->static_lib = chaz_Lib_new("clownfish", chaz_Lib_STATIC, cfish_version,
                                     cfish_major_version);
     self->shared_lib_filename = chaz_Lib_filename(self->shared_lib);
     self->static_lib_filename = chaz_Lib_filename(self->static_lib);
@@ -8030,12 +8044,10 @@ cfish_MakeFile_write(cfish_MakeFile *self) {
 
     /* Rules */
 
-    scratch = chaz_Util_join(" ", self->shared_lib_filename,
-                             self->static_lib_filename, NULL);
-    chaz_MakeFile_add_rule(self->makefile, "all", scratch);
-    free(scratch);
+    chaz_MakeFile_add_rule(self->makefile, "all", self->shared_lib_filename);
+    chaz_MakeFile_add_rule(self->makefile, "static", self->static_lib_filename);
 
-    if (!chaz_CLI_defined(self->cli, "enable-perl")) {
+    if (strcmp(chaz_CLI_strval(self->cli, "host"), "c") == 0) {
         cfish_MakeFile_write_c_cfc_rules(self);
     }
 
