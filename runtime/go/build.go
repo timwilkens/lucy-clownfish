@@ -37,7 +37,6 @@ var charmonizerC string = "../common/charmonizer.c"
 var charmonizerEXE string = "charmonizer"
 var charmonyH string = "charmony.h"
 var buildDir string
-var hostSrcDir string
 var buildGO string
 var configGO string
 var installedLibPath string
@@ -45,7 +44,6 @@ var installedLibPath string
 func init() {
 	_, buildGO, _, _ = runtime.Caller(1)
 	buildDir = path.Dir(buildGO)
-	hostSrcDir = path.Join(buildDir, "ext")
 	configGO = path.Join(buildDir, "clownfish", "config.go")
 	var err error
 	installedLibPath, err = cfc.InstalledLibPath(packageName)
@@ -111,8 +109,7 @@ func configure() {
 	}
 	if !current(charmonizerEXE, charmonyH) {
 		runCommand("./charmonizer", "--cc=cc", "--enable-c", "--host=go",
-			"--host-src=" + hostSrcDir, "--enable-makefile",
-			"--", "-std=gnu99", "-O2")
+			"--enable-makefile", "--", "-std=gnu99", "-O2")
 	}
 }
 
