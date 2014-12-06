@@ -123,7 +123,10 @@ func runCFC() {
 	if modified {
 		cBinding := cfc.NewBindC(hierarchy, autogenHeader, "")
 		cBinding.WriteCallbacks()
-		cBinding.WriteHostDefs()
+		goBinding := cfc.NewBindGo(hierarchy)
+		goBinding.SetHeader(autogenHeader)
+		packageDir := path.Join(buildDir, "clownfish")
+		goBinding.WriteBindings("Clownfish", packageDir)
 		hierarchy.WriteLog()
 	}
 }
