@@ -324,3 +324,73 @@ Hash_get_tombstone() {
     return TOMBSTONE;
 }
 
+Hash*
+Hash_Shallow_Copy_IMP(Hash *self) {
+    Hash *twin = Hash_new(self->size);
+
+    HashEntry *entries = (HashEntry*)twin->entries;
+    memcpy(entries, self->entries, self->capacity * sizeof(HashEntry));
+    twin->size      = self->size;
+    twin->threshold = self->threshold;
+
+    HashEntry *entry       = (HashEntry*)self->entries;
+    HashEntry *const limit = entry + self->capacity;
+
+    for (; entry < limit; entry++) {
+        if (entry->key && entry->key != TOMBSTONE) {
+            (void)INCREF(entry->key);
+            (void)INCREF(entry->value);
+        }
+    }
+
+    return twin;
+}
+
+/*Hash*
+Hash_Clone_IMP(Hash *self) {
+    Hash *twin = Hash_new(self->size);
+
+    HashEntry *entry       = (HashEntry*)self->entries;
+    HashEntry *const limit = entry + self->capacity;
+
+    for (; entry < limit; entry++) {
+        if (entry->key && entry->key != TOMBSTONE) {
+	        String *key = Str_Clone(entry->key);
+	        Obj *value = Obj_Clone(entry->value);
+	        if (value) {
+                Hash_Store(twin, key, value);
+	        }
+        }
+    }
+
+    return twin;
+}
+*/
+
+Hash*
+Hash_Clone_IMP(Hash *self) {
+    Hash *twin = Hash_new(self->size);
+
+    HashEntry *entry       = (HashEntry*)self->entries;
+    HashEntry *twin_entry  = (HashEntry*)twin->entries;
+    HashEntry *const limit = entry + self->capacity;
+
+    for (; entry < limit; entry++ && twin_entry++) {
+        if (entry->key) {
+            if (entry->key == TOMBSTONE) {
+                twin_entry->key = TOMBSTONE;
+            } else {
+                twin_entry->key = Str_Clone(entry->key);
+                if (entry->value) {
+                    twin_entry->value = Obj_Clone(entry->value);
+                }
+            }
+            twin_entry->hash_sum = entry->hash_sum;
+        }
+    }
+
+    twin->size = self->size;
+    twin->threshold = self->threshold;
+
+    return twin;
+}

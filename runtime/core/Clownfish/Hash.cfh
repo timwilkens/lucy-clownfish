@@ -110,6 +110,17 @@ public class Clownfish::Hash inherits Clownfish::Obj {
 
     public void
     Destroy(Hash *self);
+
+    /** Clone the Hash but merely increment the refcount of its elements
+     * rather than clone them.
+     */
+    incremented Hash*
+    Shallow_Copy(Hash *self);
+
+    /** Dupe the Hash, cloning each internal element.
+     */
+    public incremented Hash*
+    Clone(Hash *self);
 }
 
 

@@ -237,15 +237,46 @@ test_store_skips_tombstone(TestBatchRunner *runner) {
     DECREF(hash);
 }
 
+static void
+test_Clone_and_Shallow_Copy(TestBatchRunner *runner) {
+    Hash *hash = Hash_new(0);
+    Hash *twin;
+    uint32_t i;
+
+    for (i = 0; i < 100; i++) {
+        String *str = Str_newf("%u32", i);
+        Hash_Store(hash, str, (Obj*)Int32_new(i));
+    }
+
+    String *key = Str_newf("%i32", 0);
+
+    twin = Hash_Shallow_Copy(hash);
+    TEST_TRUE(runner, Hash_Equals(hash, (Obj*)twin), "Shallow_Copy");
+    TEST_TRUE(runner, Hash_Fetch(hash, key) == Hash_Fetch(twin, key),
+              "Shallow_Copy doesn't clone elements");
+
+    DECREF(twin);
+
+    twin = Hash_Clone(hash);
+    TEST_TRUE(runner, Hash_Equals(hash, (Obj*)twin), "Clone");
+    TEST_TRUE(runner, Hash_Fetch(hash, key) != Hash_Fetch(twin, key),
+              "Clone performs deep clone");
+
+    DECREF(key);
+    DECREF(twin);
+    DECREF(hash);
+}
+
 void
 TestHash_Run_IMP(TestHash *self, TestBatchRunner *runner) {
-    TestBatchRunner_Plan(runner, (TestBatch*)self, 26);
+    TestBatchRunner_Plan(runner, (TestBatch*)self, 30);
     srand((unsigned int)time((time_t*)NULL));
     test_Equals(runner);
     test_Store_and_Fetch(runner);
     test_Keys_Values(runner);
     test_stress(runner);
     test_store_skips_tombstone(runner);
+    test_Clone_and_Shallow_Copy(runner);
 }
 
 
